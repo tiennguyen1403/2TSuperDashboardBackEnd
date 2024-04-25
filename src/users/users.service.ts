@@ -1,9 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import * as bcrypt from 'bcrypt';
+import { Pagination } from 'src/helpers/decorators/pagination-params.decorator';
+import { PaginatedResource } from 'src/helpers/types/paginated-resource';
+import { Sorting } from 'src/helpers/decorators/sorting-params.decorator';
+import { getOrder } from 'src/helpers/ultilities/queries';
 
 @Injectable()
 export class UsersService {
@@ -11,38 +16,76 @@ export class UsersService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {}
 
-  create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const { username, password } = createUserDto;
     const user: User = new User();
+    const existUser = await this.userRepository.findOneBy({ username });
 
+    if (existUser) {
+      throw new HttpException('User already exist.', HttpStatus.BAD_REQUEST);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     user.fullName = createUserDto.fullName;
     user.email = createUserDto.email;
     user.username = createUserDto.username;
-    user.password = createUserDto.password;
+    user.password = hashedPassword;
 
     return this.userRepository.save(user);
   }
 
-  findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async findAll(
+    pagination: Pagination,
+    sort?: Sorting,
+  ): Promise<PaginatedResource<Partial<User>>> {
+    const order = getOrder(sort);
+    const { page, limit, size, offset } = pagination;
+    const [users, total] = await this.userRepository.findAndCount({
+      order,
+      take: limit,
+      skip: offset,
+    });
+
+    return { items: users, totalItems: total, page, size };
   }
 
   findOne(id: number): Promise<User> {
     return this.userRepository.findOneBy({ id });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user: User = new User();
+  findOneByUsername(username: string): Promise<User> {
+    return this.userRepository.findOneBy({ username });
+  }
 
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const { username, password } = updateUserDto;
+    const user: User = new User();
+    const existUser = await this.userRepository.findOneBy({ username });
+
+    if (existUser) {
+      throw new HttpException(
+        'Username already exist.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     user.fullName = updateUserDto.fullName;
     user.email = updateUserDto.email;
     user.username = updateUserDto.username;
-    user.password = updateUserDto.password;
+    user.password = hashedPassword;
     user.id = id;
 
     return this.userRepository.save(user);
   }
 
-  remove(id: number): Promise<{ affected?: number }> {
+  async remove(id: number): Promise<{ affected?: number }> {
+    const existUser = await this.userRepository.findOneBy({ id });
+
+    if (!existUser) {
+      throw new HttpException('User not found.', HttpStatus.NOT_FOUND);
+    }
+
     return this.userRepository.delete(id);
   }
 }
