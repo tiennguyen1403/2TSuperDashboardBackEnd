@@ -8,7 +8,8 @@ import * as bcrypt from 'bcrypt';
 import { Pagination } from 'src/helpers/decorators/pagination-params.decorator';
 import { PaginatedResource } from 'src/helpers/types/paginated-resource';
 import { Sorting } from 'src/helpers/decorators/sorting-params.decorator';
-import { getOrder } from 'src/helpers/ultilities/queries';
+import { getOrder, getWhere } from 'src/helpers/ultilities/queries';
+import { Filtering } from 'src/helpers/decorators/filtering-params.decorator';
 
 @Injectable()
 export class UsersService {
@@ -37,10 +38,13 @@ export class UsersService {
   async findAll(
     pagination: Pagination,
     sort?: Sorting,
+    filter?: Filtering,
   ): Promise<PaginatedResource<Partial<User>>> {
+    const where = getWhere(filter);
     const order = getOrder(sort);
     const { page, limit, size, offset } = pagination;
     const [users, total] = await this.userRepository.findAndCount({
+      where,
       order,
       take: limit,
       skip: offset,
@@ -49,7 +53,7 @@ export class UsersService {
     return { items: users, totalItems: total, page, size };
   }
 
-  findOne(id: number): Promise<User> {
+  findOne(id: string): Promise<User> {
     return this.userRepository.findOneBy({ id });
   }
 
@@ -57,7 +61,7 @@ export class UsersService {
     return this.userRepository.findOneBy({ username });
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const { username, password } = updateUserDto;
     const user: User = new User();
     const existUser = await this.userRepository.findOneBy({ username });
@@ -79,7 +83,7 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async remove(id: number): Promise<{ affected?: number }> {
+  async remove(id: string): Promise<{ affected?: number }> {
     const existUser = await this.userRepository.findOneBy({ id });
 
     if (!existUser) {

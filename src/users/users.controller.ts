@@ -23,6 +23,10 @@ import {
   Sorting,
   SortingParams,
 } from 'src/helpers/decorators/sorting-params.decorator';
+import {
+  Filtering,
+  FilteringParams,
+} from 'src/helpers/decorators/filtering-params.decorator';
 
 @UseGuards(AuthGuard)
 @Controller('users')
@@ -39,30 +43,34 @@ export class UsersController {
 
   @HttpCode(HttpStatus.OK)
   @Get()
+  @ApiQuery({ name: 'filter', required: false })
+  @ApiQuery({ name: 'sort', required: false })
   @ApiQuery({ name: 'size', required: false })
   @ApiQuery({ name: 'page', required: false })
   findAll(
     @PaginationParams() paginationParams: Pagination,
     @SortingParams(['fullName', 'id', 'email', 'username']) sort?: Sorting,
+    @FilteringParams(['fullName', 'id', 'email', 'username'])
+    filter?: Filtering,
   ) {
-    return this.usersService.findAll(paginationParams, sort);
+    return this.usersService.findAll(paginationParams, sort, filter);
   }
 
   @HttpCode(HttpStatus.OK)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+    return this.usersService.findOne(id);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+    return this.usersService.update(id, updateUserDto);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+    return this.usersService.remove(id);
   }
 }
