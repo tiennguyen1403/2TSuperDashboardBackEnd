@@ -30,8 +30,8 @@ export class SignUpDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  @Matches(passwordRegEx, {
-    message: `Password must contain Minimum 8 and maximum 16 characters, at least one uppercase letter, one lowercase letter, one number and one special character`,
-  })
+  // @Matches(passwordRegEx, {
+  //   message: `Password must contain Minimum 8 and maximum 16 characters, at least one uppercase letter, one lowercase letter, one number and one special character`,
+  // })
   password: string;
 }

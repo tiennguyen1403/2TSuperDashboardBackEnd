@@ -11,6 +11,8 @@ import { Sorting } from 'src/helpers/decorators/sorting-params.decorator';
 import { getOrder, getWhere } from 'src/helpers/ultilities/queries';
 import { Filtering } from 'src/helpers/decorators/filtering-params.decorator';
 
+const { BAD_REQUEST, NOT_FOUND } = HttpStatus;
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -18,13 +20,8 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const { username, password } = createUserDto;
+    const { password } = createUserDto;
     const user: User = new User();
-    const existUser = await this.userRepository.findOneBy({ username });
-
-    if (existUser) {
-      throw new HttpException('User already exist.', HttpStatus.BAD_REQUEST);
-    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     user.fullName = createUserDto.fullName;
@@ -61,33 +58,30 @@ export class UsersService {
     return this.userRepository.findOneBy({ username });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const { username, password } = updateUserDto;
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<{ affected?: number }> {
+    const { password } = updateUserDto;
     const user: User = new User();
-    const existUser = await this.userRepository.findOneBy({ username });
 
-    if (existUser) {
-      throw new HttpException(
-        'Username already exist.',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = password
+      ? await bcrypt.hash(password, 10)
+      : undefined;
     user.fullName = updateUserDto.fullName;
     user.email = updateUserDto.email;
     user.username = updateUserDto.username;
     user.password = hashedPassword;
     user.id = id;
 
-    return this.userRepository.save(user);
+    return this.userRepository.update(id, user);
   }
 
   async remove(id: string): Promise<{ affected?: number }> {
     const existUser = await this.userRepository.findOneBy({ id });
 
     if (!existUser) {
-      throw new HttpException('User not found.', HttpStatus.NOT_FOUND);
+      throw new HttpException('User not found.', NOT_FOUND);
     }
 
     return this.userRepository.delete(id);

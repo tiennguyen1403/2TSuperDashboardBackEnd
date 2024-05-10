@@ -15,6 +15,8 @@ type TokenResponse = {
   refreshToken: string;
 };
 
+const { BAD_REQUEST, NOT_FOUND, UNAUTHORIZED, NO_CONTENT } = HttpStatus;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -27,13 +29,13 @@ export class AuthService {
     const user = await this.userService.findOneByUsername(username);
 
     if (!user) {
-      throw new HttpException('User not found.', HttpStatus.NOT_FOUND);
+      throw new HttpException('User not found.', NOT_FOUND);
     }
 
     const isMatchPassword = await bcrypt.compare(password, user.password);
 
     if (!isMatchPassword) {
-      throw new HttpException('Incorrect password.', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Incorrect password.', BAD_REQUEST);
     }
 
     const tokens = await this.getTokens(user.id, user.username);
@@ -41,23 +43,17 @@ export class AuthService {
   }
 
   async signUp(signUpDto: SignUpDto): Promise<AuthResponse> {
-    const { username } = signUpDto;
-    const existUser = await this.userService.findOneByUsername(username);
-
-    if (existUser) {
-      throw new HttpException(
-        'Username already exist.',
-        HttpStatus.BAD_REQUEST,
-      );
+    try {
+      const user = await this.userService.create(signUpDto);
+      const tokens = await this.getTokens(user.id, user.username);
+      return { ...tokens, user };
+    } catch (error) {
+      throw new HttpException(error.detail, BAD_REQUEST);
     }
-
-    const user = await this.userService.create(signUpDto);
-    const tokens = await this.getTokens(user.id, user.username);
-    return { ...tokens, user };
   }
 
   async signOut() {
-    return new HttpException('Logged out.', HttpStatus.NO_CONTENT);
+    return new HttpException('Logged out.', NO_CONTENT);
   }
 
   async refreshTokens(refreshToken: string): Promise<TokenResponse> {
@@ -71,7 +67,7 @@ export class AuthService {
       });
       return { refreshToken, accessToken };
     } catch (error) {
-      throw new HttpException('Token was expired', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Token was expired', UNAUTHORIZED);
     }
   }
 
