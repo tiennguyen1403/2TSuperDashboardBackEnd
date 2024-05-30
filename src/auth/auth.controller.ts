@@ -1,8 +1,16 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -29,7 +37,8 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  refreshTokens(@Body() body: any) {
-    return this.authService.refreshTokens(body.refreshToken);
+  refreshTokens(@Req() request: Request) {
+    const [_, refreshToken] = request.headers.authorization?.split(' ') ?? [];
+    return this.authService.refreshTokens(refreshToken);
   }
 }
