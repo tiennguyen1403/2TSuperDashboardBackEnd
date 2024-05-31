@@ -37,8 +37,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  refreshTokens(@Req() request: Request) {
-    const [_, refreshToken] = request.headers.authorization?.split(' ') ?? [];
-    return this.authService.refreshTokens(refreshToken);
+  refreshTokens(@Body() body: { refreshToken: string }) {
+    return this.authService.refreshTokens(body.refreshToken);
   }
 }
