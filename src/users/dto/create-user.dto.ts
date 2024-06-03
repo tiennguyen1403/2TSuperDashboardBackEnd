@@ -1,6 +1,8 @@
 import {
   IsAlphanumeric,
+  IsBoolean,
   IsEmail,
+  IsEmpty,
   IsNotEmpty,
   IsString,
   Matches,
@@ -8,7 +10,8 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-const passwordRegEx = /^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){8,16}$/;
+const passwordRegEx =
+  /^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){8,16}$/;
 // password must contain 1 number (0-9)
 // password must contain 1 uppercase letters
 // password must contain 1 lowercase letters
@@ -41,4 +44,8 @@ export class CreateUserDto {
     message: `Password must contain Minimum 8 and maximum 16 characters, at least one uppercase letter, one lowercase letter, one number and one special character`,
   })
   password: string;
+
+  @ApiProperty({ required: false })
+  @IsBoolean()
+  isActive?: boolean;
 }
