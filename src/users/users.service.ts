@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -11,7 +16,7 @@ import { Sorting } from 'src/helpers/decorators/sorting-params.decorator';
 import { getOrder, getWhere } from 'src/helpers/ultilities/queries';
 import { Filtering } from 'src/helpers/decorators/filtering-params.decorator';
 
-const { BAD_REQUEST, NOT_FOUND } = HttpStatus;
+const { NOT_FOUND } = HttpStatus;
 
 @Injectable()
 export class UsersService {
@@ -20,7 +25,15 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const { password } = createUserDto;
+    const { password, username } = createUserDto;
+    const existingUser = await this.userRepository.findOne({
+      where: { username },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('User with this username already exists');
+    }
+
     const user: User = new User();
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -28,6 +41,7 @@ export class UsersService {
     user.email = createUserDto.email;
     user.username = createUserDto.username;
     user.password = hashedPassword;
+    user.isActive = createUserDto.isActive;
 
     return this.userRepository.save(user);
   }
