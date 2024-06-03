@@ -9,6 +9,7 @@ import {
   Put,
   HttpCode,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -37,8 +38,18 @@ export class UsersController {
 
   @HttpCode(HttpStatus.CREATED)
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
+  async create(@Body() createUserDto: CreateUserDto) {
     //validate
+    const existingUser = await this.usersService.findOneByUsername(
+      createUserDto.username,
+    );
+
+    if (existingUser) {
+      throw new HttpException(
+        'User with this username already exists',
+        HttpStatus.CONFLICT,
+      );
+    }
 
     //create
     return this.usersService.create(createUserDto);
