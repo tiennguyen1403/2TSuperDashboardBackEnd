@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { Pagination } from 'src/helpers/decorators/pagination-params.decorator';
 import { PaginatedResource } from 'src/helpers/types/paginated-resource';
 import { Sorting } from 'src/helpers/decorators/sorting-params.decorator';
-import { getOrder, getWhere } from 'src/helpers/ultilities/queries';
+import { getOrder, getWhere } from 'src/helpers/utilities/queries';
 import { Filtering } from 'src/helpers/decorators/filtering-params.decorator';
 
 const { NOT_FOUND } = HttpStatus;
@@ -21,14 +21,10 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const { password } = createUserDto;
-    const user: User = new User();
+    let user: User = new User();
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    user.fullName = createUserDto.fullName;
-    user.email = createUserDto.email;
-    user.username = createUserDto.username;
-    user.password = hashedPassword;
-    user.isActive = createUserDto.isActive;
+    let hashedPassword = await bcrypt.hash(password, 10);
+    user = { ...createUserDto, password: hashedPassword } as User;
 
     return this.userRepository.save(user);
   }
@@ -63,17 +59,11 @@ export class UsersService {
     id: string,
     updateUserDto: UpdateUserDto,
   ): Promise<{ affected?: number }> {
-    const { password } = updateUserDto;
-    const user: User = new User();
+    let { password } = updateUserDto;
+    let user: User = new User();
 
-    const hashedPassword = password
-      ? await bcrypt.hash(password, 10)
-      : undefined;
-    user.fullName = updateUserDto.fullName;
-    user.email = updateUserDto.email;
-    user.username = updateUserDto.username;
-    user.password = hashedPassword;
-    user.id = id;
+    let hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+    user = { ...updateUserDto, password: hashedPassword } as User;
 
     return this.userRepository.update(id, user);
   }

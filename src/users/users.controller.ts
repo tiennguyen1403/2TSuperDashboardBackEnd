@@ -29,6 +29,8 @@ import {
   FilteringParams,
 } from 'src/helpers/decorators/filtering-params.decorator';
 
+const { CREATED, CONFLICT } = HttpStatus;
+
 @UseGuards(AuthGuard)
 @Controller('users')
 @ApiTags('Users')
@@ -36,22 +38,17 @@ import {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(CREATED)
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
-    //validate
-    const existingUser = await this.usersService.findOneByUsername(
-      createUserDto.username,
-    );
+    const { username } = createUserDto;
+    const existingUser = await this.usersService.findOneByUsername(username);
 
     if (existingUser) {
-      throw new HttpException(
-        'User with this username already exists',
-        HttpStatus.CONFLICT,
-      );
+      const message = 'User with this username already exists';
+      throw new HttpException(message, CONFLICT);
     }
 
-    //create
     return this.usersService.create(createUserDto);
   }
 
@@ -78,7 +75,15 @@ export class UsersController {
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    const { username } = updateUserDto;
+    const existingUser = await this.usersService.findOneByUsername(username);
+
+    if (existingUser && existingUser.id !== id) {
+      const message = 'Username already exists!';
+      throw new HttpException(message, CONFLICT);
+    }
+
     return this.usersService.update(id, updateUserDto);
   }
 
