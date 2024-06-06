@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { Pagination } from 'src/helpers/decorators/pagination-params.decorator';
@@ -6,7 +11,7 @@ import { PaginatedResource } from 'src/helpers/types/paginated-resource';
 import { Project } from './entities/project.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CrudResponse } from 'src/helpers/types/response.type';
+import { CrudResponse, ListResponse } from 'src/helpers/types/response.type';
 import { User } from 'src/users/entities/user.entity';
 
 const { CREATED, NO_CONTENT, NOT_FOUND, OK } = HttpStatus;
@@ -23,14 +28,12 @@ export class ProjectsService {
   async create(
     createProjectDto: CreateProjectDto,
   ): Promise<CrudResponse<Project>> {
-    let project: Project = new Project();
-    project = { ...createProjectDto } as Project;
-    const newProject = await this.projectRepository.save(project);
+    const newProject = await this.projectRepository.save(createProjectDto);
 
     return {
       item: newProject,
       statusCode: CREATED,
-      message: 'Project created successfully!',
+      message: 'Project was created successfully!',
     };
   }
 
@@ -56,8 +59,32 @@ export class ProjectsService {
     return this.projectRepository.findOneBy({ name });
   }
 
-  update(id: number, updateProjectDto: UpdateProjectDto) {
-    return `This action updates a #${id} project`;
+  async findOneWithMembers(projectId: string): Promise<ListResponse<User>> {
+    const project = await this.projectRepository.findOne({
+      where: { id: projectId },
+      relations: ['members'],
+    });
+
+    if (!project) throw new NotFoundException('Project not found!');
+
+    return {
+      page: 1,
+      items: project.members,
+      size: project.members.length,
+      totalItem: project.members.length,
+    };
+  }
+
+  async update(
+    id: string,
+    updateProjectDto: UpdateProjectDto,
+  ): Promise<CrudResponse<null>> {
+    await this.projectRepository.update(id, updateProjectDto);
+    return {
+      item: null,
+      statusCode: NO_CONTENT,
+      message: 'Project was updated successfully!',
+    };
   }
 
   async remove(id: string): Promise<CrudResponse<null>> {
@@ -88,6 +115,24 @@ export class ProjectsService {
       item: result,
       statusCode: OK,
       message: `Added user (${user.fullName}) to project (${project.name}) successfully!`,
+    };
+  }
+
+  async removeMember(
+    projectId: string,
+    userId: string,
+  ): Promise<CrudResponse<null>> {
+    const project = await this.projectRepository.findOne({
+      where: { id: projectId },
+      relations: ['members'],
+    });
+    if (!project) throw new NotFoundException('Project not found!');
+    project.members = project.members.filter((member) => member.id !== userId);
+    await this.projectRepository.save(project);
+    return {
+      item: null,
+      statusCode: NO_CONTENT,
+      message: `User was remove from project (${project.name}) successfully!`,
     };
   }
 }

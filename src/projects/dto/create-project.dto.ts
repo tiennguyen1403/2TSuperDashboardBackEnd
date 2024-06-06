@@ -24,11 +24,12 @@ export class CreateProjectDto {
   name: string;
 
   @ApiProperty({
-    required: false,
+    required: true,
     enum: ProjectStatus,
     default: ProjectStatus.NOT_STARTED,
   })
   @IsEnum(ProjectStatus)
+  @IsNotEmpty()
   status: ProjectStatus;
 
   @ApiProperty({ required: false })
@@ -39,10 +40,7 @@ export class CreateProjectDto {
   @IsString()
   projectCover: string;
 
-  @ApiProperty({
-    required: false,
-    description: 'A brief description of the project',
-  })
+  @ApiProperty({ required: false })
   @IsString()
   description: string;
 

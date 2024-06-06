@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -23,8 +23,7 @@ import {
 import { validate } from 'class-validator';
 import { AddMemberDto } from './dto/add-member.dto';
 
-const { CREATED, OK, NO_CONTENT, CONFLICT, BAD_REQUEST, NOT_FOUND } =
-  HttpStatus;
+const { CREATED, OK, CONFLICT, BAD_REQUEST, NOT_FOUND } = HttpStatus;
 
 @UseGuards(AuthGuard)
 @Controller('projects')
@@ -60,15 +59,36 @@ export class ProjectsController {
   }
 
   @HttpCode(OK)
+  @Get(':projectId/members')
+  async getMembers(@Param('projectId') projectId: string) {
+    return this.projectsService.findOneWithMembers(projectId);
+  }
+
+  @HttpCode(OK)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.projectsService.findOne(id);
   }
 
-  @HttpCode(NO_CONTENT)
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
-    return this.projectsService.update(+id, updateProjectDto);
+  @HttpCode(OK)
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateProjectDto: UpdateProjectDto,
+  ) {
+    const { name } = updateProjectDto;
+    const existingProject = await this.projectsService.findOneByName(name);
+
+    if (existingProject && existingProject.id !== id) {
+      const message = 'Project with this name already exists!';
+      throw new HttpException(message, CONFLICT);
+    }
+
+    validate(updateProjectDto).then((errors) => {
+      if (errors.length > 0) throw new HttpException(errors[0], BAD_REQUEST);
+    });
+
+    return this.projectsService.update(id, updateProjectDto);
   }
 
   @HttpCode(OK)
@@ -87,5 +107,14 @@ export class ProjectsController {
     @Body() addMemberDto: AddMemberDto,
   ) {
     return this.projectsService.addMember(projectId, addMemberDto.userId);
+  }
+
+  @HttpCode(OK)
+  @Delete(':projectId/members/:userId')
+  async removeMember(
+    @Param('projectId') projectId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.projectsService.removeMember(projectId, userId);
   }
 }
