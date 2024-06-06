@@ -6,11 +6,17 @@ import {
   IsNotEmpty,
   IsString,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { ProjectStatus } from '../entities/project.entity';
 import { Type } from 'class-transformer';
 
 export class CreateProjectDto {
+  @ApiProperty({ required: true })
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
   @ApiProperty()
   @IsString()
   @MinLength(2, { message: 'Name must have at least 2 characters.' })
@@ -42,21 +48,21 @@ export class CreateProjectDto {
 
   @ApiProperty({
     required: false,
-    description: 'The start date of the project',
     type: String,
     format: 'date-time',
   })
   @IsDate({ message: 'Start Date must be a Date instance' })
+  @ValidateIf((object, value) => value !== null)
   @Type(() => Date)
   startDate: Date;
 
   @ApiProperty({
     required: false,
-    description: 'The end date of the project',
     type: String,
     format: 'date-time',
   })
   @IsDate({ message: 'Start Date must be a Date instance' })
+  @ValidateIf((object, value) => value !== null)
   @Type(() => Date)
   endDate: Date;
 

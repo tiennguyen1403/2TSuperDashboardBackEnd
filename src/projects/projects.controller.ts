@@ -21,8 +21,10 @@ import {
   PaginationParams,
 } from 'src/helpers/decorators/pagination-params.decorator';
 import { validate } from 'class-validator';
+import { AddMemberDto } from './dto/add-member.dto';
 
-const { CREATED, OK, NO_CONTENT, CONFLICT, BAD_REQUEST } = HttpStatus;
+const { CREATED, OK, NO_CONTENT, CONFLICT, BAD_REQUEST, NOT_FOUND } =
+  HttpStatus;
 
 @UseGuards(AuthGuard)
 @Controller('projects')
@@ -60,7 +62,7 @@ export class ProjectsController {
   @HttpCode(OK)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.projectsService.findOne(+id);
+    return this.projectsService.findOne(id);
   }
 
   @HttpCode(NO_CONTENT)
@@ -69,9 +71,21 @@ export class ProjectsController {
     return this.projectsService.update(+id, updateProjectDto);
   }
 
-  @HttpCode(NO_CONTENT)
+  @HttpCode(OK)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.projectsService.remove(+id);
+  async remove(@Param('id') id: string) {
+    const existingProject = await this.projectsService.findOne(id);
+    if (!existingProject) {
+      throw new HttpException('Project not found!', NOT_FOUND);
+    }
+    return this.projectsService.remove(id);
+  }
+
+  @Post(':projectId/members')
+  async addMember(
+    @Param('projectId') projectId: string,
+    @Body() addMemberDto: AddMemberDto,
+  ) {
+    return this.projectsService.addMember(projectId, addMemberDto.userId);
   }
 }

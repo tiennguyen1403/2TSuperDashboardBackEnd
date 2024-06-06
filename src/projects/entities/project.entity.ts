@@ -1,8 +1,10 @@
+import { User } from 'src/users/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
-  PrimaryGeneratedColumn,
+  ManyToMany,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -21,7 +23,7 @@ export enum ProjectStatus {
 
 @Entity()
 export class Project {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('uuid')
   id: string;
 
   @Column({ unique: true })
@@ -57,4 +59,7 @@ export class Project {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToMany(() => User, (users) => users.projects)
+  members: User[];
 }

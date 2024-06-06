@@ -1,8 +1,11 @@
 import { Exclude } from 'class-transformer';
+import { Project } from 'src/projects/entities/project.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
+  ManyToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -36,4 +39,8 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToMany(() => Project, (project) => project.members)
+  @JoinTable()
+  projects: Project[];
 }
