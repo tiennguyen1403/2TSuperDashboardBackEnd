@@ -41,6 +41,10 @@ export class CreateUserDto {
   password: string;
 
   @ApiProperty({ required: false })
+  @IsString()
+  avatar?: string;
+
+  @ApiProperty({ required: false })
   @IsBoolean()
   isActive?: boolean;
 }

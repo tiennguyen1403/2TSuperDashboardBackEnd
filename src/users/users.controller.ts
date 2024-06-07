@@ -28,6 +28,7 @@ import {
   Filtering,
   FilteringParams,
 } from 'src/helpers/decorators/filtering-params.decorator';
+import { validate } from 'class-validator';
 
 const { CREATED, CONFLICT } = HttpStatus;
 
@@ -83,6 +84,10 @@ export class UsersController {
       const message = 'Username already exists!';
       throw new HttpException(message, CONFLICT);
     }
+
+    validate(updateUserDto).then((errors) => {
+      if (errors.length > 0) throw new HttpException(errors[0], CONFLICT);
+    });
 
     return this.usersService.update(id, updateUserDto);
   }
