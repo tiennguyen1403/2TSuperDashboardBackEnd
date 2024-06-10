@@ -8,6 +8,7 @@ import * as Joi from '@hapi/joi';
 import { DatabaseModule } from './database/database.module';
 import { ProjectsModule } from './projects/projects.module';
 import { TasksModule } from './tasks/tasks.module';
+import { TaskGroupModule } from './task-group/task-group.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { TasksModule } from './tasks/tasks.module';
     AuthModule,
     ProjectsModule,
     TasksModule,
+    TaskGroupModule,
   ],
   controllers: [AppController],
   providers: [AppService],

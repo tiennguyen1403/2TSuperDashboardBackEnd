@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { TaskStatus } from '../entities/task.entity';
+import { Type } from 'class-transformer';
+import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
+import { TaskGroup } from 'src/task-group/entities/task-group.entity';
+import { User } from 'src/users/entities/user.entity';
 
 export class CreateTaskDto {
   @ApiProperty()
@@ -16,11 +18,13 @@ export class CreateTaskDto {
   @IsBoolean()
   isCompleted: boolean;
 
-  @ApiProperty({
-    required: false,
-    enum: TaskStatus,
-    default: TaskStatus.OPEN,
-  })
-  @IsEnum(TaskStatus)
-  status: TaskStatus;
+  @ApiProperty()
+  @Type(() => TaskGroup)
+  @IsNotEmpty()
+  status: TaskGroup;
+
+  @ApiProperty()
+  @Type(() => User)
+  @IsNotEmpty()
+  assignedFor: User;
 }

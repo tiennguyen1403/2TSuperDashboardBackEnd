@@ -1,3 +1,4 @@
+import { TaskGroup } from 'src/task-group/entities/task-group.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Entity,
@@ -28,18 +29,14 @@ export class Task {
   @Column({ default: false })
   isCompleted: boolean;
 
-  @Column({
-    type: 'enum',
-    enum: TaskStatus,
-    default: TaskStatus.OPEN,
-  })
-  status: TaskStatus;
-
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToOne(() => TaskGroup, (taskGroup) => taskGroup.tasks)
+  status: TaskGroup;
 
   @ManyToOne(() => User, (user) => user.tasks)
   assignedFor: User;
