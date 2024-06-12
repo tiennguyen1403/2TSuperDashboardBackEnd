@@ -17,7 +17,7 @@ export class TaskGroup {
   name: string;
 
   @Column()
-  description: string;
+  order: number;
 
   @CreateDateColumn()
   createdAt: Date;

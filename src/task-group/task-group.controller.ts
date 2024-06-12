@@ -9,6 +9,7 @@ import {
   HttpException,
   HttpStatus,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { TaskGroupService } from './task-group.service';
 import { CreateTaskGroupDto } from './dto/create-task-group.dto';
@@ -16,6 +17,7 @@ import { UpdateTaskGroupDto } from './dto/update-task-group.dto';
 import { validate } from 'class-validator';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ReorderTakGroupDto } from './dto/reorder-task-group.dto';
 
 const { BAD_REQUEST, NOT_FOUND } = HttpStatus;
 
@@ -58,7 +60,21 @@ export class TaskGroupController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     const taskGroup = await this.taskGroupService.findOne(id);
+    //check task group exist
     if (!taskGroup) throw new HttpException('Task Group not found!', NOT_FOUND);
-    return this.taskGroupService.remove(id);
+    //check if task group still have task
+    if (taskGroup.item.tasks.length)
+      throw new HttpException(
+        'Please remove all tasks before delete!',
+        BAD_REQUEST,
+      );
+    const removeResult = await this.taskGroupService.remove(id);
+    await this.taskGroupService.reorder();
+    return removeResult;
+  }
+
+  @Patch('reorder')
+  async reorder(@Body() reorderTaskGroupDto: ReorderTakGroupDto) {
+    return this.taskGroupService.reorder(reorderTaskGroupDto.newTaskGroups);
   }
 }

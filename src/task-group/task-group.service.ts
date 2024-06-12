@@ -23,17 +23,19 @@ export class TaskGroupService {
   }
 
   async findOne(id: string): Promise<CrudResponse<TaskGroup>> {
-    const taskGroup = await this.taskGroupRepository.findOneBy({ id });
+    const taskGroup = await this.taskGroupRepository.findOne({
+      where: { id },
+      relations: ['tasks'],
+    });
     return { item: taskGroup, statusCode: OK, message: '' };
   }
 
-  async create(
-    createTaskGroupDto: CreateTaskGroupDto,
-  ): Promise<CrudResponse<TaskGroup>> {
-    const newTaskGroup =
-      await this.taskGroupRepository.save(createTaskGroupDto);
+  async create(createTaskGroupDto: CreateTaskGroupDto) {
+    const totalItem = await this.taskGroupRepository.count();
+    const payload = { ...createTaskGroupDto, order: totalItem + 1 };
+    const result = await this.taskGroupRepository.save(payload);
     return {
-      item: newTaskGroup,
+      item: result,
       statusCode: CREATED,
       message: 'Task Group was created successfully!',
     };
@@ -47,10 +49,27 @@ export class TaskGroupService {
 
   async remove(id: string): Promise<CrudResponse<null>> {
     await this.taskGroupRepository.delete(id);
-    return {
-      item: null,
-      statusCode: NO_CONTENT,
-      message: 'Task Group was deleted successfully!',
-    };
+    const message = 'Task Group was deleted successfully!';
+    return { item: null, statusCode: NO_CONTENT, message };
+  }
+
+  async reorder(taskGroupsDto?: UpdateTaskGroupDto[]) {
+    let taskGroups: UpdateTaskGroupDto[] = [];
+    let message = 'Task Groups were updated successfully!';
+    if (taskGroupsDto) {
+      taskGroups = taskGroupsDto;
+      await this.taskGroupRepository.save(taskGroups);
+      return { item: null, statusCode: OK, message };
+    } else {
+      taskGroups = await this.taskGroupRepository.find({
+        order: { order: 'ASC' },
+      });
+      const newTaskGroups = taskGroups.map((taskGroup, index) => ({
+        ...taskGroup,
+        order: index + 1,
+      }));
+      await this.taskGroupRepository.save(newTaskGroups);
+      return { item: null, statusCode: OK, message };
+    }
   }
 }

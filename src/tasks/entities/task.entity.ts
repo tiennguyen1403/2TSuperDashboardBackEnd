@@ -26,8 +26,8 @@ export class Task {
   @Column()
   description: string;
 
-  @Column({ default: false })
-  isCompleted: boolean;
+  @Column({ default: 1 })
+  order: number;
 
   @CreateDateColumn()
   createdAt: Date;
